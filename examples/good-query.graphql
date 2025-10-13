@@ -1,0 +1,25 @@
+# Example of a well-optimized query
+
+query GetDevicesPaginated {
+  # Good: uses pagination
+  device_list(limit: 10) {
+    id
+    name
+    status
+    device_type {
+      id
+      model
+    }
+    # Good: pagination on nested list
+    interfaces(limit: 5) {
+      id
+      name
+      type
+      enabled
+    }
+    site {
+      id
+      name
+    }
+  }
+}

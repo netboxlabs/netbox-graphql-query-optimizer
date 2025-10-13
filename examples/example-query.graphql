@@ -1,0 +1,37 @@
+# Example NetBox GraphQL query with various patterns
+
+query GetDevices {
+  # List without pagination - should trigger warning
+  device_list {
+    id
+    name
+    status
+    device_type {
+      id
+      model
+      manufacturer {
+        name
+      }
+    }
+    # Nested list under list - fan-out warning
+    interfaces {
+      id
+      name
+      type
+      enabled
+      # Another nested list - more fan-out
+      ip_addresses {
+        id
+        address
+        status
+      }
+    }
+    site {
+      id
+      name
+      region {
+        name
+      }
+    }
+  }
+}

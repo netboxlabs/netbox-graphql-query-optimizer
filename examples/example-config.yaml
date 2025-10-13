@@ -1,0 +1,45 @@
+# Example configuration for netbox-gqo
+
+# NetBox base URL (GraphQL endpoint will be derived by appending /graphql/)
+default_url: https://demo.netbox.dev/
+
+# Analysis thresholds
+max_depth: 5
+max_aliases: 10
+breadth_warn: 15        # Warn if single object requests > 15 fields
+leaf_warn: 20           # Warn if single object has > 20 scalar fields
+pagination_default: 100
+
+# Cache directories
+schema_cache_dir: ~/.netbox-gqo/schemas
+calibration_cache_dir: ~/.netbox-gqo/calibration
+
+# Type weights for complexity scoring
+# Higher weight = more expensive to query
+type_weights:
+  Device: 3
+  Interface: 2
+  IPAddress: 1
+  Cable: 2
+  VirtualMachine: 3
+
+# GraphQL type → REST endpoint mappings for calibration
+type_mappings:
+  Device: /api/dcim/devices/
+  Interface: /api/dcim/interfaces/
+  IPAddress: /api/ipam/ip-addresses/
+  VirtualMachine: /api/virtualization/virtual-machines/
+  Cable: /api/dcim/cables/
+  Circuit: /api/circuits/circuits/
+  Contact: /api/tenancy/contacts/
+  Prefix: /api/ipam/prefixes/
+  Rack: /api/dcim/racks/
+  Site: /api/dcim/sites/
+  VLAN: /api/ipam/vlans/
+
+# Named profiles for different NetBox instances
+profiles:
+  - name: prod
+    url: https://prod.netbox.example.com/
+  - name: dev
+    url: https://dev.netbox.example.com/

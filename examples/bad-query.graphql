@@ -1,0 +1,182 @@
+# Example of a very expensive, poorly optimized query
+# Complexity: ~850+ (CRITICAL)
+# Issues: Multiple unpaginated nested lists, overfetch (80+ fields), deep fan-out
+
+query GetDevicesWithCabling {
+  device_list(
+    pagination: {limit: 50, offset: 0},
+    filters: {site: {id: "1"}}
+  ) {
+    id
+    name
+    asset_tag
+    serial
+    status
+    position
+    face
+    comments
+    # Unpaginated list #1 - tags
+    tags {
+      id
+      name
+      slug
+      color
+    }
+    site {
+      id
+      name
+      slug
+      region {
+        name
+        slug
+      }
+    }
+    rack {
+      name
+      facility_id
+    }
+    device_type {
+      id
+      model
+      slug
+      manufacturer {
+        name
+        slug
+      }
+    }
+    role {
+      id
+      name
+      slug
+    }
+    platform {
+      name
+      slug
+    }
+    tenant {
+      name
+      slug
+    }
+    # Unpaginated list #2 - interfaces (fan-out begins)
+    interfaces {
+      id
+      name
+      label
+      type
+      enabled
+      mtu
+      description
+      mode
+      # Unpaginated list #3 - VLANs (nested fan-out)
+      tagged_vlans {
+        id
+        vid
+        name
+        tenant {
+          name
+        }
+      }
+      untagged_vlan {
+        id
+        vid
+        name
+      }
+      # Unpaginated list #4 - IP addresses (nested fan-out)
+      ip_addresses {
+        id
+        address
+        status
+        dns_name
+        description
+        family {
+          value
+          label
+        }
+        vrf {
+          name
+        }
+      }
+      # Unpaginated list #5 - connected endpoints (massive fan-out)
+      connected_endpoints {
+        __typename
+        ... on InterfaceType {
+          id
+          name
+          device {
+            id
+            name
+            site {
+              name
+            }
+            device_type {
+              manufacturer {
+                name
+              }
+              model
+            }
+          }
+        }
+        ... on FrontPortType {
+          id
+          name
+          device {
+            id
+            name
+            site {
+              name
+            }
+          }
+        }
+        ... on RearPortType {
+          id
+          name
+          device {
+            id
+            name
+          }
+        }
+      }
+      cable {
+        id
+        label
+        type
+        status
+        color
+        length
+        length_unit
+      }
+    }
+    # Unpaginated list #6 - console ports
+    consoleports {
+      id
+      name
+      type
+      description
+      cable {
+        id
+        label
+      }
+    }
+    # Unpaginated list #7 - power ports
+    powerports {
+      id
+      name
+      type
+      maximum_draw
+      allocated_draw
+    }
+    primary_ip4 {
+      id
+      address
+      dns_name
+    }
+    primary_ip6 {
+      id
+      address
+      dns_name
+    }
+    custom_fields
+    created
+    last_updated
+  }
+}

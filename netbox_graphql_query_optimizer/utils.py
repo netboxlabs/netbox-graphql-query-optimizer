@@ -323,3 +323,63 @@ def loc(node) -> tuple[int, int]:
         col = node.loc.source.get_location(node.loc.start).column
         return (line, col)
     return (0, 0)
+
+
+# HTTP response helpers
+def safe_json_response(response, context: str = "API request") -> dict:
+    """
+    Safely parse JSON from HTTP response with helpful error messages.
+
+    Args:
+        response: requests.Response object
+        context: Description of what operation failed (e.g., "GraphQL introspection")
+
+    Returns:
+        Parsed JSON as dict
+
+    Raises:
+        RuntimeError: If response is not valid JSON, with detailed diagnostic info
+    """
+    try:
+        return response.json()
+    except json.JSONDecodeError as e:
+        # Get response details for debugging
+        url = response.url
+        status = response.status_code
+        content_type = response.headers.get("Content-Type", "unknown")
+
+        # Preview response body (first 300 chars)
+        body_preview = response.text[:300]
+        if len(response.text) > 300:
+            body_preview += "..."
+
+        # Build helpful error message
+        error_parts = [
+            f"{context} failed - server returned non-JSON response",
+            "",
+            f"  URL: {url}",
+            f"  Status: {status}",
+            f"  Content-Type: {content_type}",
+            "",
+            "  Response preview:",
+            f"  {body_preview}",
+            "",
+            "  Suggestions:",
+            "  - Verify the URL is correct and points to a valid endpoint",
+        ]
+
+        # Add context-specific suggestions
+        if "graphql" in context.lower():
+            error_parts.append("  - Ensure the GraphQL endpoint is accessible (try /graphql/)")
+            error_parts.append("  - Authentication may be required - try adding --token YOUR_TOKEN")
+        elif "rest" in context.lower() or "calibration" in context.lower():
+            error_parts.append("  - Authentication may be required - verify your API token")
+            error_parts.append("  - Check that the REST API endpoint is accessible")
+
+        error_parts.append("  - Verify the server is running and properly configured")
+
+        # Add original JSON error for debugging
+        error_parts.append("")
+        error_parts.append(f"  Original JSON error: {e}")
+
+        raise RuntimeError("\n".join(error_parts))

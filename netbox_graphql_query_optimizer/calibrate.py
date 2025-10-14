@@ -40,7 +40,7 @@ def calibrate(
         try:
             r = requests.get(url, headers=headers, timeout=15)
             if r.ok:
-                data = r.json()
+                data = utils.safe_json_response(r, context=f"REST API calibration ({graphql_type})")
                 out[graphql_type] = data.get("count")
             else:
                 out[graphql_type] = None

@@ -103,7 +103,7 @@ def introspect(graphql_url: str, token: Optional[str] = None) -> dict:
     if resp.status_code != 200:
         raise RuntimeError(f"Introspection failed with status {resp.status_code}")
 
-    payload = resp.json()
+    payload = utils.safe_json_response(resp, context="GraphQL introspection")
 
     if "errors" in payload:
         raise RuntimeError(f"Introspection errors: {payload['errors']}")

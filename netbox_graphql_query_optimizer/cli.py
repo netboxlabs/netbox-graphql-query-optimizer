@@ -1,5 +1,6 @@
 """CLI for netbox-gqo."""
 
+import os
 import sys
 from dataclasses import dataclass
 from typing import Literal, Optional
@@ -18,11 +19,27 @@ app.add_typer(schema_app, name="schema")
 console = Console()
 
 
+def get_token(cli_token: Optional[str]) -> Optional[str]:
+    """
+    Get API token from CLI argument or NETBOX_TOKEN environment variable.
+
+    CLI argument takes precedence over environment variable.
+
+    Args:
+        cli_token: Token provided via CLI argument
+
+    Returns:
+        Token string or None
+    """
+    return cli_token or os.environ.get("NETBOX_TOKEN")
+
+
 @dataclass
 class AnalyzeOptions:
     """Options for analyze command."""
 
     url: Optional[str] = None
+    token: Optional[str] = None
     schema_file: Optional[str] = None
     calibration_file: Optional[str] = None
     output: Literal["console", "json"] = "console"
@@ -34,7 +51,7 @@ class AnalyzeOptions:
 @schema_app.command("pull")
 def schema_pull(
     url: Optional[str] = typer.Option(None, help="NetBox base URL"),
-    token: Optional[str] = typer.Option(None, help="API token"),
+    token: Optional[str] = typer.Option(None, help="API token (or set NETBOX_TOKEN env var)"),
     out: Optional[str] = typer.Option(None, help="Output file path"),
 ):
     """Fetch and cache the GraphQL schema from NetBox."""
@@ -47,7 +64,8 @@ def schema_pull(
             raise typer.Exit(1)
 
         console.print(f"[cyan]Fetching schema from {full_url}...[/cyan]")
-        profile = schema_loader.load_schema(url=full_url, cfg=cfg, allow_cache=True, refresh=True, token=token)
+        api_token = get_token(token)
+        profile = schema_loader.load_schema(url=full_url, cfg=cfg, allow_cache=True, refresh=True, token=api_token)
 
         # If custom output path specified, write just the schema JSON
         if out:
@@ -65,7 +83,7 @@ def schema_pull(
 @app.command("calibrate")
 def calibrate_cmd(
     url: Optional[str] = typer.Option(None, help="NetBox base URL"),
-    token: Optional[str] = typer.Option(None, help="API token"),
+    token: Optional[str] = typer.Option(None, help="API token (or set NETBOX_TOKEN env var)"),
     query: Optional[str] = typer.Option(None, help="Query file to analyze for types"),
     out: Optional[str] = typer.Option(None, help="Output file path"),
 ):
@@ -90,7 +108,8 @@ def calibrate_cmd(
             console.print(f"[cyan]Found {len(types_to_probe)} list types in query[/cyan]")
 
         console.print(f"[cyan]Probing REST API at {base_url}...[/cyan]")
-        calib = calibrate_mod.calibrate(base_url, token, types_to_probe, cfg)
+        api_token = get_token(token)
+        calib = calibrate_mod.calibrate(base_url, api_token, types_to_probe, cfg)
 
         path = out or calibrate_mod.cache_path_for(base_url, cfg)
         utils.ensure_dir(utils.dirname(path))
@@ -106,6 +125,7 @@ def calibrate_cmd(
 def analyze_cmd(
     query_file: str = typer.Argument(..., help="GraphQL query file"),
     url: Optional[str] = typer.Option(None, help="NetBox base URL"),
+    token: Optional[str] = typer.Option(None, help="API token (or set NETBOX_TOKEN env var)"),
     schema: Optional[str] = typer.Option(None, help="Schema file path"),
     calibration: Optional[str] = typer.Option(None, help="Calibration file path"),
     output: str = typer.Option("console", help="Output format (console|json)"),
@@ -115,8 +135,10 @@ def analyze_cmd(
 ):
     """Analyze a GraphQL query for performance issues."""
     try:
+        api_token = get_token(token)
         opts = AnalyzeOptions(
             url=url,
+            token=api_token,
             schema_file=schema,
             calibration_file=calibration,
             output=output,
@@ -170,7 +192,7 @@ def run_analyze(query_path: str, opts: AnalyzeOptions) -> AnalysisSummary:
         url = utils.ensure_graphql_url(opts.url or cfg.default_url)
 
     # Load schema (introspection or file)
-    profile = schema_loader.load_schema(url=url, schema_file=opts.schema_file, cfg=cfg, allow_cache=True)
+    profile = schema_loader.load_schema(url=url, schema_file=opts.schema_file, cfg=cfg, allow_cache=True, token=opts.token)
     schema = parser.build_schema(profile.schema_json)
 
     # Parse query

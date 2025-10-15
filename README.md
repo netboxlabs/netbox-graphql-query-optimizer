@@ -23,17 +23,25 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -e .
 ```
 
-### 2. Calibrate with Your NetBox Data
+### 2. Set Your API Token
+
+For security, use the `NETBOX_TOKEN` environment variable:
+
+```bash
+export NETBOX_TOKEN=your_api_token_here
+```
+
+### 3. Calibrate with Your NetBox Data
 
 Run calibration to get accurate complexity scores based on your actual data:
 
 ```bash
-netbox-gqo calibrate --url https://your-netbox.com/ --token YOUR_API_TOKEN
+netbox-gqo calibrate --url https://your-netbox.com/
 ```
 
 This reads actual counts from your NetBox (devices, interfaces, IPs, etc.) and caches them for accurate analysis.
 
-### 3. Analyze Your First Query
+### 4. Analyze Your First Query
 
 Save your GraphQL query to a file (e.g., `my-query.graphql`):
 
@@ -339,11 +347,17 @@ Calibration is essential for getting accurate complexity scores. Without calibra
 **Running calibration:**
 
 ```bash
-# Basic calibration (requires API token)
-netbox-gqo calibrate --url https://your-netbox.com/ --token YOUR_API_TOKEN
+# Set your API token (recommended - keeps token out of shell history)
+export NETBOX_TOKEN=your_api_token_here
+
+# Basic calibration
+netbox-gqo calibrate --url https://your-netbox.com/
 
 # Query-specific calibration (only probes types used in your query)
-netbox-gqo calibrate --url https://your-netbox.com/ --token YOUR_API_TOKEN --query my-query.graphql
+netbox-gqo calibrate --url https://your-netbox.com/ --query my-query.graphql
+
+# Alternative: pass token directly with --token flag (less secure)
+netbox-gqo calibrate --url https://your-netbox.com/ --token YOUR_API_TOKEN
 ```
 
 **What gets calibrated:**
@@ -373,6 +387,9 @@ Fail builds if queries are too complex:
 
 ```bash
 # In your CI pipeline
+# Set NETBOX_TOKEN as a secret environment variable in your CI system
+export NETBOX_TOKEN=$NETBOX_SECRET
+
 netbox-gqo analyze query.graphql \
   --url https://netbox.com/ \
   --fail-on-score 200 \
@@ -491,8 +508,9 @@ echo "default_url: https://your-netbox.com/" > ~/.netbox-gqo/config.yaml
 
 **Fix:**
 ```bash
-# If authentication is required, provide a token
-netbox-gqo schema pull --url https://your-netbox.com/ --token YOUR_TOKEN
+# If authentication is required, set your token
+export NETBOX_TOKEN=your_api_token_here
+netbox-gqo schema pull --url https://your-netbox.com/
 
 # Verify the GraphQL endpoint is accessible
 curl https://your-netbox.com/graphql/
@@ -541,7 +559,10 @@ A: Without calibration: Reasonable estimates. With calibration: Very accurate fo
 A: It's optimized for NetBox, but the core analysis works with any GraphQL API. You may need to adjust type weights and mappings.
 
 **Q: What if I don't have an API token?**
-A: For public/unauthenticated NetBox instances, you can omit the `--token` parameter. For authenticated instances, you'll need a token for both schema pulling and calibration.
+A: For public/unauthenticated NetBox instances, you don't need to set `NETBOX_TOKEN`. For authenticated instances, you'll need a token (set via `NETBOX_TOKEN` environment variable or `--token` flag) for both schema pulling and calibration.
+
+**Q: Is it safe to use the --token flag?**
+A: Using `--token` on the command line is less secure because it appears in shell history and process lists. We recommend using the `NETBOX_TOKEN` environment variable instead, which keeps your token out of logs and history files.
 
 ---
 

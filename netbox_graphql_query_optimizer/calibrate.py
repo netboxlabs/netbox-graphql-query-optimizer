@@ -24,7 +24,7 @@ def calibrate(
     Returns:
         Dict mapping GraphQL type name -> count
     """
-    headers = {"Authorization": f"Token {token}"} if token else {}
+    headers = utils.get_auth_header(token)
 
     # Determine which types to probe
     if types_to_probe:

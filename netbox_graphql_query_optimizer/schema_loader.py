@@ -95,9 +95,7 @@ def introspect(graphql_url: str, token: Optional[str] = None) -> dict:
         RuntimeError: If introspection fails
     """
     query = utils.INTROSPECTION_QUERY
-    headers = {}
-    if token:
-        headers["Authorization"] = f"Token {token}"
+    headers = utils.get_auth_header(token)
     resp = requests.post(graphql_url, json={"query": query}, headers=headers, timeout=30)
 
     if resp.status_code != 200:

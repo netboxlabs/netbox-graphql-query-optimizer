@@ -31,6 +31,8 @@ For security, use the `NETBOX_TOKEN` environment variable:
 export NETBOX_TOKEN=your_api_token_here
 ```
 
+Both legacy tokens and NetBox 4.5+ v2 tokens (format: `nbt_<KEY>.<TOKEN>`) are supported. The tool automatically detects the token format and uses the appropriate authentication header (`Token` for legacy, `Bearer` for v2).
+
 ### 3. Calibrate with Your NetBox Data
 
 Run calibration to get accurate complexity scores based on your actual data:
@@ -365,13 +367,21 @@ netbox-gqo calibrate --url https://your-netbox.com/ --token YOUR_API_TOKEN
 The tool probes these NetBox REST endpoints:
 - `/api/dcim/devices/` → Device count
 - `/api/dcim/interfaces/` → Interface count
-- `/api/ipam/ip-addresses/` → IP address count
-- `/api/virtualization/virtual-machines/` → VM count
-- `/api/dcim/cables/` → Cable count
-- `/api/circuits/circuits/` → Circuit count
+- `/api/dcim/locations/` → Location count
 - `/api/dcim/racks/` → Rack count
+- `/api/dcim/regions/` → Region count
 - `/api/dcim/sites/` → Site count
+- `/api/dcim/cables/` → Cable count
+- `/api/ipam/ip-addresses/` → IP address count
+- `/api/ipam/prefixes/` → Prefix count
 - `/api/ipam/vlans/` → VLAN count
+- `/api/ipam/vrfs/` → VRF count
+- `/api/virtualization/virtual-machines/` → VM count
+- `/api/virtualization/clusters/` → Cluster count
+- `/api/circuits/circuits/` → Circuit count
+- `/api/tenancy/contacts/` → Contact count
+- `/api/tenancy/tenants/` → Tenant count
+- `/api/users/owners/` → Owner count (NetBox 4.5+)
 
 You can customize the type mappings in your config file to add more types or adjust endpoints.
 
@@ -550,7 +560,10 @@ A: No! The tool only reads your schema (once, then cached). It never runs your a
 A: No. This is a standalone CLI tool.
 
 **Q: What version of NetBox is supported?**
-A: Any version with GraphQL support (NetBox 3.3+).
+A: NetBox 4.x is recommended and fully tested. NetBox 3.3+ should work but is not actively tested. NetBox 4.5+ is supported with the new Bearer token format.
+
+**Q: What version of Python is required?**
+A: Python 3.12 or later is required (matching NetBox 4.5's requirements).
 
 **Q: How accurate are the complexity scores?**
 A: Without calibration: Reasonable estimates. With calibration: Very accurate for your specific deployment.

@@ -325,6 +325,31 @@ def loc(node) -> tuple[int, int]:
     return (0, 0)
 
 
+# Authentication helpers
+def get_auth_header(token: Optional[str]) -> dict[str, str]:
+    """
+    Get the appropriate authorization header for a NetBox API token.
+
+    NetBox 4.5+ introduces v2 tokens with format `nbt_<KEY>.<TOKEN>` that use
+    the `Bearer` authentication scheme. Legacy tokens continue to use `Token`.
+
+    Args:
+        token: API token string, or None
+
+    Returns:
+        Dict with Authorization header, or empty dict if no token
+    """
+    if not token:
+        return {}
+
+    # NetBox 4.5+ v2 tokens start with "nbt_" and use Bearer auth
+    if token.startswith("nbt_"):
+        return {"Authorization": f"Bearer {token}"}
+
+    # Legacy tokens use Token auth
+    return {"Authorization": f"Token {token}"}
+
+
 # HTTP response helpers
 def safe_json_response(response, context: str = "API request") -> dict:
     """
